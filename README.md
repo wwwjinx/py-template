@@ -1,23 +1,27 @@
 # FastAPI backend template
 
-Requires **Python 3.12+**. Use [mise](https://mise.jdx.dev/) (or similar) for the Python version, and [uv](https://github.com/astral-sh/uv) for deps — like nvm + pnpm.
+麻雀虽小，五脏俱全 — FastAPI + uv，分层对齐同级 `koa-ts-template`。
+
+Requires **Python 3.12+**. Use [mise](https://mise.jdx.dev/) for the Python version, and [uv](https://github.com/astral-sh/uv) for deps (nvm + pnpm 思路).
 
 ```bash
 uv sync
-uv run uvicorn app.main:app --reload --port 8001
+uv run dev                 # 读 env APP_PORT（默认 8001），启动时打印 local URL
+# 等价：
+uv run python -m app.main
 ```
 
 Prod-style:
 
 ```bash
-APP_ENV=prod uv run uvicorn app.main:app --host 0.0.0.0 --port 8001
+APP_ENV=prod uv run start
 ```
 
 Without uv (fallback):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8001
+python -m app.main
 ```
 
 Environment files live in `env/` (`.dev.env` / `.prod.env`). Do not put real secrets there.
@@ -30,27 +34,57 @@ Docs: http://localhost:8001/docs
 
 ```
 app/
-  main.py          # FastAPI entry
-  config.py        # load env by APP_ENV
-  db.py            # SQLAlchemy engine + get_db (lazy)
-  router/          # APIRouter modules (aggregated in __init__)
-  utils/           # Result + ErrorCode
+  main.py              # create_app + run（打印地址）
+  config.py            # 按 APP_ENV 加载 env
+  db.py                # SQLAlchemy 懒连接
+  core/                # AppException / BizException
+  enums/               # ResponseCode / ResponseMsg（ErrorCode 别名）
+  log/                 # stdout + logs/ 滚动文件
+  middleware/          # 请求日志 + 全局异常 → Result
+  router/              # APIRouter 汇总
+  utils/               # Result、get_ip_address
 env/
   .dev.env
   .prod.env
+docker-compose.yml     # 可选：仅 Postgres
 ```
+
+## Response shape（对齐 koa）
+
+所有业务响应用 `Result`：
+
+```json
+{"code": 200, "message": "success", "data": ..., "success": true, "timestamp": 0}
+```
+
+- 成功：`Result.ok(data=...)`
+- 失败：`Result.fail(message=..., code=...)` 或 `raise BizException(...)` / `HTTPException`
+- **HTTP 状态**：与 koa `error-handle` 一致 — **HTTP 200**，语义放在 **body.code**（含 404 / 校验错误 / 未捕获异常）
+- `/health/db` 无库或连不上时仍返回 Result.fail，进程不崩
+
+## Middleware / 横切
+
+| 能力 | 位置 |
+|------|------|
+| 请求日志（方法/路径/状态/耗时） | `app/middleware/request_log.py` |
+| 全局异常 → Result | `app/middleware/exception.py` |
+| CORS（`CORS_ENABLED` / `CORS_ORIGINS`） | `app/main.py` + config |
+| 日志文件 | `logs/all.log`、`logs/error.log`（已 gitignore） |
 
 ## PostgreSQL
 
-Set `DATABASE_URL` in `env/.dev.env` (or `.prod.env`):
-
 ```bash
-DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/dbname
+# optional
+docker compose up -d
 ```
 
-Stack: **SQLAlchemy 2.x** + **psycopg3** (`psycopg[binary]`). The engine is created lazily on first use, so importing / starting the app does **not** require a live database.
+Set in `env/.dev.env`:
 
-In a route:
+```bash
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/py_template
+```
+
+Stack: **SQLAlchemy 2.x** + **psycopg3**. Engine is lazy — import / start does **not** need a live DB.
 
 ```python
 from fastapi import Depends
@@ -61,18 +95,6 @@ from app.db import get_db
 def list_items(db: Session = Depends(get_db)):
     ...
 ```
-
-Optional check: `GET /health/db` → `Result.ok` / `Result.fail` with `data.ok`.
-
-## Response shape
-
-All routes return `Result` (`app/utils/result.py`):
-
-```json
-{"code": 200, "message": "success", "data": ..., "success": true, "timestamp": 0}
-```
-
-Use `Result.ok(data=...)` / `Result.fail(message=..., code=...)`.
 
 ## Add a route
 
@@ -88,4 +110,6 @@ async def demo():
     return Result.ok(data={"ok": True})
 ```
 
-Then include it from `app/router/__init__.py` (`api_router.include_router(demo.router)`).
+Then `api_router.include_router(demo.router)` in `app/router/__init__.py`.
+
+Demo errors: `GET /test/err`（BizException）、`GET /test/http-err`（HTTPException）。

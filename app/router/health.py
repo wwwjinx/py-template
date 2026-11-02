@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.db import check_db
-from app.utils.error_code import ErrorCode
+from app.enums import ErrorCode
 from app.utils.result import Result
 
 router = APIRouter(tags=["health"], prefix="/health")

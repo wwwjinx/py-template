@@ -1,10 +1,5 @@
-# app/utils/error_code.py
-from enum import IntEnum
+"""Prefer `from app.enums import ErrorCode / ResponseCode`."""
 
-class ErrorCode(IntEnum):
-    SUCCESS = 200
-    PARAM_ERROR = 400
-    UNAUTHORIZED = 401
-    FORBIDDEN = 403
-    NOT_FOUND = 404
-    SERVER_ERROR = 500
+from app.enums import ErrorCode, ResponseCode, ResponseMsg
+
+__all__ = ["ErrorCode", "ResponseCode", "ResponseMsg"]
