@@ -1,14 +1,23 @@
 # FastAPI backend template
 
-Requires **Python 3.12+**. Prefer [uv](https://github.com/astral-sh/uv) or pip + venv.
+Requires **Python 3.12+**. Use [mise](https://mise.jdx.dev/) (or similar) for the Python version, and [uv](https://github.com/astral-sh/uv) for deps — like nvm + pnpm.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+uv sync
+uv run uvicorn app.main:app --reload --port 3000
+```
 
-uvicorn app.main:app --reload --port 3000   # APP_ENV=dev (default)
-APP_ENV=prod uvicorn app.main:app --host 0.0.0.0 --port 3000
+Prod-style:
+
+```bash
+APP_ENV=prod uv run uvicorn app.main:app --host 0.0.0.0 --port 3000
+```
+
+Without uv (fallback):
+
+```bash
+python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
+uvicorn app.main:app --reload --port 3000
 ```
 
 Environment files live in `env/` (`.dev.env` / `.prod.env`). Do not put real secrets there.
