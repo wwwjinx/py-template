@@ -4,11 +4,12 @@ import uvicorn
 from fastapi import FastAPI
 
 from app import config
-from app.router import health
+from app.router import health, test
 
 app = FastAPI(title=config.APP_NAME)
 
 app.include_router(health.router)
+app.include_router(test.router)
 
 
 @app.get("/")

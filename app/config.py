@@ -9,5 +9,7 @@ APP_ENV = os.getenv("APP_ENV", "dev")
 _env_file = Path.cwd() / "env" / (".dev.env" if APP_ENV == "dev" else ".prod.env")
 load_dotenv(_env_file)
 
-APP_PORT = int(os.getenv("APP_PORT", "3000"))
+APP_PORT = int(os.getenv("APP_PORT", "8001"))
 APP_NAME = os.getenv("APP_NAME", "py-template")
+# Example: postgresql+psycopg://user:pass@localhost:5432/dbname
+DATABASE_URL = os.getenv("DATABASE_URL", "")
