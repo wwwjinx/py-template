@@ -33,7 +33,8 @@ app/
   main.py          # FastAPI entry
   config.py        # load env by APP_ENV
   db.py            # SQLAlchemy engine + get_db (lazy)
-  router/          # APIRouter modules
+  router/          # APIRouter modules (aggregated in __init__)
+  utils/           # Result + ErrorCode
 env/
   .dev.env
   .prod.env
@@ -61,19 +62,30 @@ def list_items(db: Session = Depends(get_db)):
     ...
 ```
 
-Optional check: `GET /health/db` → `{"ok": true}` or `{"ok": false, "error": "..."}`.
+Optional check: `GET /health/db` → `Result.ok` / `Result.fail` with `data.ok`.
+
+## Response shape
+
+All routes return `Result` (`app/utils/result.py`):
+
+```json
+{"code": 200, "message": "success", "data": ..., "success": true, "timestamp": 0}
+```
+
+Use `Result.ok(data=...)` / `Result.fail(message=..., code=...)`.
 
 ## Add a route
 
 ```python
 # app/router/demo.py
 from fastapi import APIRouter
+from app.utils.result import Result
 
 router = APIRouter(prefix="/demo", tags=["demo"])
 
 @router.get("")
 async def demo():
-    return {"ok": True}
+    return Result.ok(data={"ok": True})
 ```
 
-Then `app.include_router(demo.router)` in `app/main.py`.
+Then include it from `app/router/__init__.py` (`api_router.include_router(demo.router)`).

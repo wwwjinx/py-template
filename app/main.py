@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app import config
 from app.router import api_router
+from app.utils.result import Result
 
 app = FastAPI(title=config.APP_NAME)
 
@@ -13,7 +14,7 @@ app.include_router(api_router)
 
 @app.get("/")
 async def root():
-    return {"message": "ok", "app": config.APP_NAME}
+    return Result.ok(data={"message": "ok", "app": config.APP_NAME})
 
 
 def run() -> None:

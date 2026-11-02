@@ -3,15 +3,24 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.db import check_db
+from app.utils.error_code import ErrorCode
+from app.utils.result import Result
 
-router = APIRouter(tags=["health"])
+router = APIRouter(tags=["health"], prefix="/health")
 
 
-@router.get("/health")
+@router.get("")
 async def health():
-    return {"status": "ok"}
+    return Result.ok(data={"ok": True})
 
 
-@router.get("/health/db")
+@router.get("/db")
 async def health_db():
-    return check_db()
+    status = check_db()
+    if status.get("ok"):
+        return Result.ok(data=status)
+    return Result.fail(
+        message=status.get("error") or "database unavailable",
+        code=ErrorCode.SERVER_ERROR,
+        data=status,
+    )
