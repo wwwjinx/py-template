@@ -1,4 +1,4 @@
-# Optional local Postgres only — app still runs without it.
+# Optional local Postgres / Redis — app still runs without them.
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,5 +11,15 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    # Template default has no password. For local auth, override command e.g.:
+    # command: ["redis-server", "--requirepass", "your_password"]
+    volumes:
+      - redisdata:/data
+
 volumes:
   pgdata:
+  redisdata:

@@ -24,3 +24,12 @@ else:
     DATABASE_URL = _raw_db
 
 IS_DEV = APP_ENV == "dev"
+
+# Redis: REDIS_URL wins; otherwise build from host/port/password/db
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+REDIS_HOST = os.getenv("REDIS_HOST", "").strip()
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "").strip()
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+REDIS_USERNAME = os.getenv("REDIS_USERNAME", "").strip()
+

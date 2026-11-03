@@ -37,6 +37,7 @@ app/
   main.py              # create_app + run（打印地址）
   config.py            # 按 APP_ENV 加载 env
   db.py                # SQLAlchemy 懒连接
+  redis_client.py      # Redis 懒连接
   core/                # AppException / BizException
   enums/               # ResponseCode / ResponseMsg（ErrorCode 别名）
   log/                 # stdout + logs/ 滚动文件
@@ -46,7 +47,7 @@ app/
 env/
   .dev.env
   .prod.env
-docker-compose.yml     # 可选：仅 Postgres
+docker-compose.yml     # 可选：Postgres + Redis
 ```
 
 ## Response shape（对齐 koa）
@@ -60,7 +61,7 @@ docker-compose.yml     # 可选：仅 Postgres
 - 成功：`Result.ok(data=...)`
 - 失败：`Result.fail(message=..., code=...)` 或 `raise BizException(...)` / `HTTPException`
 - **HTTP 状态**：与 koa `error-handle` 一致 — **HTTP 200**，语义放在 **body.code**（含 404 / 校验错误 / 未捕获异常）
-- `/health/db` 无库或连不上时仍返回 Result.fail，进程不崩
+- `/health/db`、`/health/redis` 无服务或连不上时仍返回 Result.fail，进程不崩
 
 ## Middleware / 横切
 
@@ -95,6 +96,32 @@ from app.db import get_db
 def list_items(db: Session = Depends(get_db)):
     ...
 ```
+
+
+## Redis
+
+Stack: **redis-py**（可选 hiredis）. Client is lazy — import / start does **not** need a live Redis.
+
+In `env/.dev.env` (placeholders only; put real password in a local override or export, never commit secrets):
+
+```bash
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+# or: REDIS_URL=redis://:your_password@127.0.0.1:6379/0
+```
+
+```python
+from app.redis_client import get_redis
+
+r = get_redis()
+r.set("k", "v")
+```
+
+Health: `GET /health/redis` → `Result.ok` / `Result.fail`.
+
+Optional: `docker compose up -d redis` (compose image has no password by default).
 
 ## Add a route
 
