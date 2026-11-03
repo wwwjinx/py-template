@@ -3,7 +3,7 @@ name = "py-template"
 version = "0.1.0"
 description = "FastAPI backend template"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.32.0",
@@ -39,4 +39,4 @@ packages = ["app"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
