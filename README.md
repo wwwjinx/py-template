@@ -70,7 +70,17 @@ docker-compose.yml     # 可选：Postgres + Redis
 | 请求日志（方法/路径/状态/耗时） | `app/middleware/request_log.py` |
 | 全局异常 → Result | `app/middleware/exception.py` |
 | CORS（`CORS_ENABLED` / `CORS_ORIGINS`） | `app/main.py` + config |
-| 日志文件 | `logs/all.log`、`logs/error.log`（已 gitignore） |
+| 日志文件 | `logs/all.log`、`logs/error.log`；模块日志 `logs/{module}.{id}.log`（已 gitignore） |
+
+按模块、按业务 id 写独立文件（不进标准输出和 `all.log`）。例如模型原始返回：
+
+```python
+from app.log import get_module_logger
+
+get_module_logger("chat", chat_id).info("%s", raw_response)
+```
+
+文件是 `logs/chat.{chatId}.log`，按天滚动为 `logs/chat.{chatId}.log.2026-11-11`。
 
 ## PostgreSQL
 
