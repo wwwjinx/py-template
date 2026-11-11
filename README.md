@@ -125,8 +125,10 @@ Optional: `docker compose up -d redis` (compose image has no password by default
 
 ## Add a route
 
+Put a router in its own package, same shape as `health` and `test`:
+
 ```python
-# app/router/demo.py
+# app/router/demo/service.py
 from fastapi import APIRouter
 from app.utils.result import Result
 
@@ -135,6 +137,13 @@ router = APIRouter(prefix="/demo", tags=["demo"])
 @router.get("")
 async def demo():
     return Result.ok(data={"ok": True})
+```
+
+```python
+# app/router/demo/__init__.py
+from .service import router
+
+__all__ = ["router"]
 ```
 
 Then `api_router.include_router(demo.router)` in `app/router/__init__.py`.
