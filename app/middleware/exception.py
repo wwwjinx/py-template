@@ -13,8 +13,7 @@ logger = get_logger("app.error")
 
 
 def _result_response(result: Result, http_status: int = 200) -> JSONResponse:
-    # Keep HTTP 200 and put semantics in body.code (RuoYi-style envelope).
-    # Callers can still pass another http_status if needed later.
+    # 异常也统一包成若依响应：HTTP 默认 200，对错放在 body.code / body.msg。
     return JSONResponse(status_code=http_status, content=result.model_dump())
 
 

@@ -4,7 +4,7 @@ from app.enums import ResponseCode, ResponseMsg
 
 
 class AppException(Exception):
-    """Business / application error → Result.fail (HTTP 200, body.code)."""
+    """业务/应用异常，由全局处理器转成 Result.fail（HTTP 200，body 为若依格式）。"""
 
     def __init__(
         self,
@@ -19,4 +19,4 @@ class AppException(Exception):
 
 
 class BizException(AppException):
-    """Alias for domain/business failures."""
+    """业务失败的别名，用法与 AppException 相同。"""

@@ -4,10 +4,16 @@ from app.enums import ResponseCode
 
 
 class Result[T](BaseModel):
-    """Unified API envelope in RuoYi format: `{code, data, msg}`. HTTP often stays 200."""
+    """统一响应体，对齐若依格式：`{code, data, msg}`。
 
+    HTTP 状态通常保持 200，成功或失败看 `code`：200 成功，其它为业务错误。
+    """
+
+    # 业务状态码，200 表示成功
     code: int = 200
+    # 业务数据，失败时可为 None
     data: T | None = None
+    # 提示信息
     msg: str = "success"
 
     @classmethod
@@ -17,6 +23,7 @@ class Result[T](BaseModel):
         msg: str = "success",
         code: int = ResponseCode.SUCCESS,
     ) -> Result[T]:
+        """成功响应，默认 `code=200`、`msg=success`。"""
         return cls(code=int(code), msg=msg, data=data)
 
     @classmethod
@@ -26,4 +33,5 @@ class Result[T](BaseModel):
         code: int = ResponseCode.SERVER_ERROR,
         data: T = None,
     ) -> Result[T]:
+        """失败响应，默认 `code=500`、`msg=error`。"""
         return cls(code=int(code), msg=msg, data=data)
