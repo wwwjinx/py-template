@@ -1,5 +1,4 @@
 from collections.abc import Generator
-from typing import Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -7,8 +6,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import config
 
-_engine: Optional[Engine] = None
-_SessionLocal: Optional[sessionmaker[Session]] = None
+_engine: Engine | None = None
+_SessionLocal: sessionmaker[Session] | None = None
 
 
 def get_engine() -> Engine:
@@ -27,7 +26,7 @@ def get_engine() -> Engine:
     return _engine
 
 
-def get_db() -> Generator[Session, None, None]:
+def get_db() -> Generator[Session]:
     """FastAPI dependency: yields a SQLAlchemy Session."""
     get_engine()
     assert _SessionLocal is not None

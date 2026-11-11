@@ -22,4 +22,4 @@ class ResponseMsg:
 # Backward-compatible alias used by existing routes
 ErrorCode = ResponseCode
 
-__all__ = ["ResponseCode", "ResponseMsg", "ErrorCode"]
+__all__ = ["ErrorCode", "ResponseCode", "ResponseMsg"]

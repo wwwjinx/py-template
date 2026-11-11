@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from app.enums import ResponseCode, ResponseMsg
 
@@ -10,7 +10,7 @@ class AppException(Exception):
         self,
         message: str = ResponseMsg.ERROR,
         code: int = ResponseCode.SERVER_ERROR,
-        data: Optional[Any] = None,
+        data: Any | None = None,
     ) -> None:
         self.message = message
         self.code = int(code)

@@ -1,11 +1,10 @@
-from typing import Optional
 from urllib.parse import quote
 
 from redis import Redis
 
 from app import config
 
-_client: Optional[Redis] = None
+_client: Redis | None = None
 
 
 def _build_url() -> str:

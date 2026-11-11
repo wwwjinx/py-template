@@ -2,7 +2,7 @@
 
 麻雀虽小，五脏俱全 — FastAPI + uv，分层对齐同级 `koa-ts-template`。
 
-Requires **Python 3.14+**. Use [mise](https://mise.jdx.dev/) for the Python version, and [uv](https://github.com/astral-sh/uv) for deps (nvm + pnpm 思路).
+Requires **Python 3.15+**. Use [mise](https://mise.jdx.dev/) for the Python version, and [uv](https://github.com/astral-sh/uv) for deps (nvm + pnpm 思路).
 
 ```bash
 uv sync
