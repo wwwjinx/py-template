@@ -50,17 +50,17 @@ env/
 docker-compose.yml     # 可选：Postgres + Redis
 ```
 
-## Response shape（对齐 koa）
+## Response shape（对齐若依）
 
 所有业务响应用 `Result`：
 
 ```json
-{"code": 200, "message": "success", "data": ..., "success": true, "timestamp": 0}
+{"code": 200, "msg": "success", "data": ...}
 ```
 
 - 成功：`Result.ok(data=...)`
-- 失败：`Result.fail(message=..., code=...)` 或 `raise BizException(...)` / `HTTPException`
-- **HTTP 状态**：与 koa `error-handle` 一致 — **HTTP 200**，语义放在 **body.code**（含 404 / 校验错误 / 未捕获异常）
+- 失败：`Result.fail(msg=..., code=...)` 或 `raise BizException(...)` / `HTTPException`
+- **HTTP 状态**：**HTTP 200**，语义放在 **body.code**（含 404 / 校验错误 / 未捕获异常）
 - `/health/db`、`/health/redis` 无服务或连不上时仍返回 Result.fail，进程不崩
 
 ## Middleware / 横切

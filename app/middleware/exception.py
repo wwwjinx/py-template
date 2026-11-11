@@ -13,7 +13,7 @@ logger = get_logger("app.error")
 
 
 def _result_response(result: Result, http_status: int = 200) -> JSONResponse:
-    # Align with koa error-handle: keep HTTP 200 and put semantics in body.code.
+    # Keep HTTP 200 and put semantics in body.code (RuoYi-style envelope).
     # Callers can still pass another http_status if needed later.
     return JSONResponse(status_code=http_status, content=result.model_dump())
 
@@ -26,14 +26,14 @@ def register_exception_handlers(app: FastAPI) -> None:
             print("====================")
             print(exc)
             print("====================")
-        return _result_response(Result.fail(message=exc.message, code=exc.code, data=exc.data))
+        return _result_response(Result.fail(msg=exc.message, code=exc.code, data=exc.data))
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
         logger.warning("validation error: %s", exc.errors())
         return _result_response(
             Result.fail(
-                message=ResponseMsg.PARAM_ERROR,
+                msg=ResponseMsg.PARAM_ERROR,
                 code=ResponseCode.PARAM_ERROR,
                 data=exc.errors(),
             )
@@ -47,7 +47,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             code = ResponseCode.NOT_FOUND
             message = message if isinstance(exc.detail, str) else ResponseMsg.NOT_FOUND
         logger.warning("HTTPException status=%s detail=%s", exc.status_code, exc.detail)
-        return _result_response(Result.fail(message=str(message), code=int(code)))
+        return _result_response(Result.fail(msg=str(message), code=int(code)))
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
@@ -56,5 +56,5 @@ def register_exception_handlers(app: FastAPI) -> None:
         else:
             logger.error("unhandled error: %s", exc)
         return _result_response(
-            Result.fail(message=ResponseMsg.ERROR, code=ResponseCode.SERVER_ERROR)
+            Result.fail(msg=ResponseMsg.ERROR, code=ResponseCode.SERVER_ERROR)
         )

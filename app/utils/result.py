@@ -1,33 +1,29 @@
-import time
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.enums import ResponseCode
 
 
 class Result[T](BaseModel):
-    """Unified API envelope (koa-style: HTTP often stays 200, `code` carries semantics)."""
+    """Unified API envelope in RuoYi format: `{code, data, msg}`. HTTP often stays 200."""
 
     code: int = 200
-    message: str = "success"
     data: T | None = None
-    success: bool = True
-    timestamp: int = Field(default_factory=lambda: int(time.time() * 1000))
+    msg: str = "success"
 
     @classmethod
     def ok(
         cls,
         data: T = None,
-        message: str = "success",
+        msg: str = "success",
         code: int = ResponseCode.SUCCESS,
     ) -> Result[T]:
-        return cls(code=int(code), message=message, data=data, success=True)
+        return cls(code=int(code), msg=msg, data=data)
 
     @classmethod
     def fail(
         cls,
-        message: str = "error",
+        msg: str = "error",
         code: int = ResponseCode.SERVER_ERROR,
         data: T = None,
     ) -> Result[T]:
-        return cls(code=int(code), message=message, data=data, success=False)
+        return cls(code=int(code), msg=msg, data=data)
