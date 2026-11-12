@@ -54,6 +54,4 @@ def register_exception_handlers(app: FastAPI) -> None:
             logger.exception("unhandled error")
         else:
             logger.error("unhandled error: %s", exc)
-        return _result_response(
-            Result.fail(msg=ResponseMsg.ERROR, code=ResponseCode.SERVER_ERROR)
-        )
+        return _result_response(Result.fail(msg=ResponseMsg.ERROR, code=ResponseCode.SERVER_ERROR))
