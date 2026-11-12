@@ -1,5 +1,7 @@
 from collections.abc import Generator
+from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine, text
 
@@ -22,6 +24,9 @@ def get_db() -> Generator[Session]:
     """FastAPI 依赖：产出一个 SQLModel Session，请求结束时关闭。"""
     with Session(get_engine()) as db:
         yield db
+
+
+SessionDep = Annotated[Session, Depends(get_db)]
 
 
 def init_db() -> None:

@@ -99,16 +99,15 @@ DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/py_template
 Stack: **SQLModel**（基于 SQLAlchemy 2.x）+ **psycopg3**。引擎懒加载，导入和启动不要求数据库已就绪。需要建表时调用 `init_db()`（按模型 `create_all`，已存在则跳过），启动不会自动建表。
 
 ```python
-from fastapi import Depends
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from app.db import get_db
+from app.db import SessionDep
 from app.models import Item
 from app.utils.result import Result
 
 
 @router.get("/items")
-def list_items(db: Session = Depends(get_db)):
+def list_items(db: SessionDep):
     return Result.ok(data=db.exec(select(Item)).all())
 ```
 
