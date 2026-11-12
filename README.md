@@ -24,7 +24,7 @@ python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
 python -m app.main
 ```
 
-Environment files live in `env/` (`.dev.env` / `.prod.env`). Do not put real secrets there.
+环境文件在项目根下的 `env/`（`.dev.env` / `.prod.env`），按文件位置解析，不依赖启动时的工作目录。不要把真实密钥写进去。
 
 Docs: http://localhost:8001/docs
 
@@ -35,14 +35,15 @@ Docs: http://localhost:8001/docs
 ```
 app/
   main.py              # create_app + run（打印地址）
-  config.py            # 按 APP_ENV 加载 env
-  db.py                # SQLAlchemy 懒连接
+  config.py            # 按 APP_ENV 加载 env（相对项目根目录）
+  db.py                # SQLModel 懒连接
   redis_client.py      # Redis 懒连接
   core/                # AppException / BizException
   enums/               # ResponseCode / ResponseMsg（ErrorCode 别名）
   log/                 # stdout + logs/ 滚动文件
   middleware/          # 请求日志 + 全局异常 → Result
-  router/              # APIRouter 汇总
+  router/              # 汇总；各模块为 router.py（路由）+ service.py（业务）
+  models/              # SQLModel 表（示例 Item）
   utils/               # Result、get_ip_address
 env/
   .dev.env
@@ -69,10 +70,10 @@ docker-compose.yml     # 可选：Postgres + Redis
 |------|------|
 | 请求日志（方法/路径/状态/耗时） | `app/middleware/request_log.py` |
 | 全局异常 → Result | `app/middleware/exception.py` |
-| CORS（`CORS_ENABLED` / `CORS_ORIGINS`） | `app/main.py` + config |
-| 日志文件 | `logs/all.log`、`logs/error.log`；模块日志 `logs/{module}.{id}.log`（已 gitignore） |
+| CORS（`CORS_ENABLED` / `CORS_ORIGINS`；`*` 时不开 credentials） | `app/main.py` + config |
+| 日志文件 | `logs/all.log.YYYY-MM-DD`（完整流水，含错误）、`logs/error.log.YYYY-MM-DD`（仅错误）；模块日志 `logs/{module}.{id}.log.YYYY-MM-DD`（已 gitignore） |
 
-按模块、按业务 id 写独立文件（不进标准输出和 `all.log`）。例如模型原始返回：
+按模块、按业务 id 写独立文件（不进标准输出和 all 日志）。例如模型原始返回：
 
 ```python
 from app.log import get_module_logger
@@ -80,7 +81,7 @@ from app.log import get_module_logger
 get_module_logger("chat", chat_id).info("%s", raw_response)
 ```
 
-文件是 `logs/chat.{chatId}.log`，按天滚动为 `logs/chat.{chatId}.log.2026-11-11`。
+当天直接写到 `logs/chat.{chatId}.log.2026-11-11`。目录可用 `LOG_DIR` 配置；模块日志只保留最近 `LOG_MODULE_CACHE_SIZE` 个打开的文件（默认 256）。
 
 ## PostgreSQL
 
@@ -95,17 +96,23 @@ Set in `env/.dev.env`:
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/py_template
 ```
 
-Stack: **SQLAlchemy 2.x** + **psycopg3**. Engine is lazy — import / start does **not** need a live DB.
+Stack: **SQLModel**（基于 SQLAlchemy 2.x）+ **psycopg3**。引擎懒加载，导入和启动不要求数据库已就绪。需要建表时调用 `init_db()`（按模型 `create_all`，已存在则跳过），启动不会自动建表。
 
 ```python
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
+
 from app.db import get_db
+from app.models import Item
+from app.utils.result import Result
+
 
 @router.get("/items")
 def list_items(db: Session = Depends(get_db)):
-    ...
+    return Result.ok(data=db.exec(select(Item)).all())
 ```
+
+写操作需要自行 `db.commit()`，请求结束只会关闭 session，不会自动提交。
 
 
 ## Redis
@@ -135,27 +142,36 @@ Optional: `docker compose up -d redis` (compose image has no password by default
 
 ## Add a route
 
-Put a router in its own package, same shape as `health` and `test`:
+新模块做成独立包，和 `health`、`test` 一样拆成路由和业务：
 
 ```python
 # app/router/demo/service.py
-from fastapi import APIRouter
 from app.utils.result import Result
 
-router = APIRouter(prefix="/demo", tags=["demo"])
-
-@router.get("")
-async def demo():
+def ping() -> Result:
     return Result.ok(data={"ok": True})
 ```
 
 ```python
+# app/router/demo/router.py
+from fastapi import APIRouter
+
+from app.router.demo import service
+
+router = APIRouter(prefix="/demo", tags=["demo"])
+
+@router.get("")
+def demo():
+    return service.ping()
+```
+
+```python
 # app/router/demo/__init__.py
-from .service import router
+from .router import router
 
 __all__ = ["router"]
 ```
 
-Then `api_router.include_router(demo.router)` in `app/router/__init__.py`.
+然后在 `app/router/__init__.py` 里 `api_router.include_router(demo.router)`。
 
 Demo errors: `GET /test/err`（BizException）、`GET /test/http-err`（HTTPException）。

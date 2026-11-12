@@ -1,37 +1,30 @@
-from fastapi import APIRouter
-
 from app.db import check_db
-from app.enums import ErrorCode
+from app.enums import ResponseCode
 from app.redis_client import check_redis
 from app.utils.result import Result
 
-router = APIRouter(tags=["health"], prefix="/health")
 
-
-@router.get("")
-async def health():
+def ping() -> Result:
     return Result.ok(data={"ok": True})
 
 
-@router.get("/db")
-async def health_db():
+def db() -> Result:
     status = check_db()
     if status.get("ok"):
         return Result.ok(data=status)
     return Result.fail(
-        message=status.get("error") or "database unavailable",
-        code=ErrorCode.SERVER_ERROR,
+        msg=status.get("error") or "database unavailable",
+        code=ResponseCode.SERVER_ERROR,
         data=status,
     )
 
 
-@router.get("/redis")
-async def health_redis():
+def redis() -> Result:
     status = check_redis()
     if status.get("ok"):
         return Result.ok(data=status)
     return Result.fail(
-        message=status.get("error") or "redis unavailable",
-        code=ErrorCode.SERVER_ERROR,
+        msg=status.get("error") or "redis unavailable",
+        code=ResponseCode.SERVER_ERROR,
         data=status,
     )
