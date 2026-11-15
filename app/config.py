@@ -22,10 +22,14 @@ CORS_ENABLED = os.getenv("CORS_ENABLED", "true").lower() in {"1", "true", "yes",
 _cors_raw = os.getenv("CORS_ORIGINS", "*").strip()
 CORS_ORIGINS = [o.strip() for o in _cors_raw.split(",") if o.strip()] or ["*"]
 
-# Example: postgresql+psycopg://user:pass@localhost:5432/dbname
+# Example: postgresql+psycopg_async://user:pass@localhost:5432/dbname
 _raw_db = os.getenv("DATABASE_URL", "").strip()
-if _raw_db.startswith("postgresql://") and "+psycopg" not in _raw_db:
-    DATABASE_URL = "postgresql+psycopg://" + _raw_db[len("postgresql://") :]
+if _raw_db.startswith("postgresql+psycopg_async://"):
+    DATABASE_URL = _raw_db
+elif _raw_db.startswith("postgresql+psycopg://"):
+    DATABASE_URL = "postgresql+psycopg_async://" + _raw_db[len("postgresql+psycopg://") :]
+elif _raw_db.startswith("postgresql://"):
+    DATABASE_URL = "postgresql+psycopg_async://" + _raw_db[len("postgresql://") :]
 else:
     DATABASE_URL = _raw_db
 

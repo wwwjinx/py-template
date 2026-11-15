@@ -36,7 +36,7 @@ Docs: http://localhost:8001/docs
 app/
   main.py              # create_app + run（打印地址）
   config.py            # 按 APP_ENV 加载 env（相对项目根目录）
-  db.py                # SQLModel 懒连接
+  db.py                # SQLModel 异步引擎（懒加载）
   redis_client.py      # Redis 懒连接
   core/                # AppException / BizException
   enums/               # ResponseCode / ResponseMsg（ErrorCode 别名）
@@ -93,10 +93,10 @@ docker compose up -d
 Set in `env/.dev.env`:
 
 ```bash
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/py_template
+DATABASE_URL=postgresql+psycopg_async://postgres:postgres@localhost:5432/py_template
 ```
 
-Stack: **SQLModel**（基于 SQLAlchemy 2.x）+ **psycopg3**。引擎懒加载，导入和启动不要求数据库已就绪。需要建表时调用 `init_db()`（按模型 `create_all`，已存在则跳过），启动不会自动建表。
+Stack: **SQLModel**（基于 SQLAlchemy 2.x 异步引擎）+ **psycopg3**。引擎懒加载，导入和启动不要求数据库已就绪。需要建表时调用 `await init_db()`（按模型 `create_all`，已存在则跳过），启动不会自动建表。`postgresql://` 与 `postgresql+psycopg://` 会自动改成 `postgresql+psycopg_async://`。
 
 ```python
 from sqlmodel import select
@@ -107,8 +107,9 @@ from app.utils.result import Result
 
 
 @router.get("/items")
-def list_items(db: SessionDep):
-    return Result.ok(data=db.exec(select(Item)).all())
+async def list_items(db: SessionDep):
+    result = await db.exec(select(Item))
+    return Result.ok(data=result.all())
 ```
 
 写操作需要自行 `db.commit()`，请求结束只会关闭 session，不会自动提交。

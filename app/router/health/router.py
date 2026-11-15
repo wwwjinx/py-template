@@ -11,8 +11,8 @@ def health():
 
 
 @router.get("/db")
-def health_db():
-    return service.db()
+async def health_db():
+    return await service.db()
 
 
 @router.get("/redis")

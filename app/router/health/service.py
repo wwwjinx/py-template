@@ -8,8 +8,8 @@ def ping() -> Result:
     return Result.ok(data={"ok": True})
 
 
-def db() -> Result:
-    status = check_db()
+async def db() -> Result:
+    status = await check_db()
     if status.get("ok"):
         return Result.ok(data=status)
     return Result.fail(
