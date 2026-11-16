@@ -1,8 +1,8 @@
-# FastAPI backend template
+# FastAPI 后端模板
 
 麻雀虽小，五脏俱全 — FastAPI + uv，分层对齐同级 `koa-ts-template`。
 
-Requires **Python 3.15+**. Use [mise](https://mise.jdx.dev/) for the Python version, and [uv](https://github.com/astral-sh/uv) for deps (nvm + pnpm 思路).
+需要 **Python 3.15+**。Python 版本用 [mise](https://mise.jdx.dev/) 管理，依赖用 [uv](https://github.com/astral-sh/uv)（思路类似 nvm + pnpm）。
 
 ```bash
 uv sync
@@ -11,13 +11,13 @@ uv run dev                 # 读 env APP_PORT（默认 8001），启动时打印
 uv run python -m app.main
 ```
 
-Prod-style:
+生产风格启动：
 
 ```bash
 APP_ENV=prod uv run start
 ```
 
-Without uv (fallback):
+不用 uv 时的备选方式：
 
 ```bash
 python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
@@ -26,11 +26,11 @@ python -m app.main
 
 环境文件在项目根下的 `env/`（`.dev.env` / `.prod.env`），按文件位置解析，不依赖启动时的工作目录。不要把真实密钥写进去。
 
-Docs: http://localhost:8001/docs
+接口文档：http://localhost:8001/docs
 
 ---
 
-## Layout
+## 目录结构
 
 ```
 app/
@@ -51,7 +51,7 @@ env/
 docker-compose.yml     # 可选：Postgres + Redis
 ```
 
-## Response shape（对齐若依）
+## 响应格式（对齐若依）
 
 所有业务响应用 `Result`：
 
@@ -64,7 +64,7 @@ docker-compose.yml     # 可选：Postgres + Redis
 - **HTTP 状态**：**HTTP 200**，语义放在 **body.code**（含 404 / 校验错误 / 未捕获异常）
 - `/health/db`、`/health/redis` 无服务或连不上时仍返回 Result.fail，进程不崩
 
-## Middleware / 横切
+## 中间件 / 横切
 
 | 能力 | 位置 |
 |------|------|
@@ -86,17 +86,17 @@ get_module_logger("chat", chat_id).info("%s", raw_response)
 ## PostgreSQL
 
 ```bash
-# optional
+# 可选
 docker compose up -d
 ```
 
-Set in `env/.dev.env`:
+在 `env/.dev.env` 中配置：
 
 ```bash
 DATABASE_URL=postgresql+psycopg_async://postgres:postgres@localhost:5432/py_template
 ```
 
-Stack: **SQLModel**（基于 SQLAlchemy 2.x 异步引擎）+ **psycopg3**。引擎懒加载，导入和启动不要求数据库已就绪。需要建表时调用 `await init_db()`（按模型 `create_all`，已存在则跳过），启动不会自动建表。`postgresql://` 与 `postgresql+psycopg://` 会自动改成 `postgresql+psycopg_async://`。
+技术栈：**SQLModel**（基于 SQLAlchemy 2.x 异步引擎）+ **psycopg3**。引擎懒加载，导入和启动不要求数据库已就绪。需要建表时调用 `await init_db()`（按模型 `create_all`，已存在则跳过），启动不会自动建表。`postgresql://` 与 `postgresql+psycopg://` 会自动改成 `postgresql+psycopg_async://`。
 
 ```python
 from sqlmodel import select
@@ -113,8 +113,6 @@ async def list_items(db: SessionDep):
 ```
 
 写操作需要自行 `db.commit()`，请求结束只会关闭 session，不会自动提交。
-
-
 
 ## 登录鉴权与系统管理
 
@@ -150,12 +148,11 @@ curl -s http://localhost:8001/getRouters -H "Authorization: Bearer <token>"
 uv run python tests/test_system_auth.py
 ```
 
-
 ## Redis
 
-Stack: **redis-py**（可选 hiredis）. Client is lazy — import / start does **not** need a live Redis.
+技术栈：**redis-py**（可选 hiredis）。客户端懒连接，导入和启动时不要求 Redis 已就绪。
 
-In `env/.dev.env` (placeholders only; put real password in a local override or export, never commit secrets):
+在 `env/.dev.env` 中配置（以下仅为占位；真实密码放到本地覆盖文件或环境变量，不要提交密钥）：
 
 ```bash
 REDIS_HOST=127.0.0.1
@@ -172,11 +169,11 @@ r = get_redis()
 r.set("k", "v")
 ```
 
-Health: `GET /health/redis` → `Result.ok` / `Result.fail`.
+健康检查：`GET /health/redis` → `Result.ok` / `Result.fail`。
 
-Optional: `docker compose up -d redis` (compose image has no password by default).
+可选：`docker compose up -d redis`（compose 镜像默认无密码）。
 
-## Add a route
+## 新增路由
 
 新模块做成独立包，和 `health`、`test` 一样拆成路由和业务：
 
@@ -218,4 +215,4 @@ __all__ = ["router"]
 - `PUT /test/{id}` 更新
 - `DELETE /test/{id}` 删除
 
-Demo errors: `GET /test/err`（BizException）、`GET /test/http-err`（HTTPException）。
+演示错误：`GET /test/err`（BizException）、`GET /test/http-err`（HTTPException）。
