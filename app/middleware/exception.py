@@ -16,7 +16,7 @@ def _result_response(result: Result, http_status: int = 200) -> JSONResponse:
     # 异常也统一包成若依响应：HTTP 默认 200，对错放在 body.code / body.msg。
     return JSONResponse(status_code=http_status, content=result.model_dump())
 
-
+ 
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppException)
     async def app_exception_handler(_: Request, exc: AppException) -> JSONResponse:

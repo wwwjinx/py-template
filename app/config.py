@@ -42,3 +42,11 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "").strip()
 REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 REDIS_USERNAME = os.getenv("REDIS_USERNAME", "").strip()
+
+# JWT：无状态 HS256。密钥只放本地，不要把真实秘密写进仓库里的 env 文件。
+JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+try:
+    JWT_EXPIRE_MINUTES = max(1, int(os.getenv("JWT_EXPIRE_MINUTES", "1440")))
+except ValueError:
+    JWT_EXPIRE_MINUTES = 1440

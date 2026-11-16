@@ -1,0 +1,27 @@
+"""系统管理用到的若依常量。"""
+
+ADMIN_USER_ID = 1
+ADMIN_ROLE_ID = 1
+ALL_PERMISSION = "*:*:*"
+
+# 删除标记：0 存在，2 删除
+DEL_FLAG_NORMAL = "0"
+DEL_FLAG_DELETED = "2"
+
+# 状态：0 正常，1 停用
+STATUS_NORMAL = "0"
+STATUS_DISABLE = "1"
+
+# 登录日志：0 成功，1 失败
+LOGIN_SUCCESS = "0"
+LOGIN_FAIL = "1"
+
+MENU_ROOT_ID = 0
+MENU_TYPE_DIR = "M"
+MENU_TYPE_MENU = "C"
+MENU_TYPE_BUTTON = "F"
+NO_FRAME = 1
+YES_FRAME = 0
+LAYOUT = "Layout"
+PARENT_VIEW = "ParentView"
+INNER_LINK = "InnerLink"

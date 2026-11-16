@@ -43,7 +43,7 @@ app/
   log/                 # stdout + logs/ 滚动文件
   middleware/          # 请求日志 + 全局异常 → Result
   router/              # 汇总；各模块为 router.py（路由）+ service.py（业务）
-  models/              # SQLModel 表（示例 Item）
+  models/              # SQLModel 表（示例 Test，对应表 test）
   utils/               # Result、get_ip_address
 env/
   .dev.env
@@ -102,17 +102,53 @@ Stack: **SQLModel**（基于 SQLAlchemy 2.x 异步引擎）+ **psycopg3**。引�
 from sqlmodel import select
 
 from app.db import SessionDep
-from app.models import Item
+from app.models import Test
 from app.utils.result import Result
 
 
 @router.get("/items")
 async def list_items(db: SessionDep):
-    result = await db.exec(select(Item))
+    result = await db.exec(select(Test))
     return Result.ok(data=result.all())
 ```
 
 写操作需要自行 `db.commit()`，请求结束只会关闭 session，不会自动提交。
+
+
+
+## 登录鉴权与系统管理
+
+已迁入若依常用的登录鉴权、用户/角色/菜单/部门、字典、操作/登录日志，实现按本模板的 FastAPI + SQLModel 异步 Session 习惯，接口路径对齐若依前端。
+
+依赖：`uv sync`（含 `pyjwt`、`bcrypt`）。配置 `DATABASE_URL` 后手动建表并写入超管（启动不会自动执行）：
+
+```bash
+uv run python -m app.seed
+# 等价：
+# uv run python -c "import asyncio; from app.db import init_db; from app.seed import seed_admin; asyncio.run(init_db()); print(asyncio.run(seed_admin()))"
+```
+
+默认账号 `admin` / `admin123`。若表里已有 `admin` 用户会跳过，可重复执行。在 `env/.dev.env` 里配置 `JWT_SECRET`（不要提交真实密钥）。
+
+登录示例：
+
+```bash
+curl -s -X POST http://localhost:8001/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}'
+# 成功：{"code":200,"msg":"登录成功","data":{"token":"..."}}
+
+curl -s http://localhost:8001/getInfo -H "Authorization: Bearer <token>"
+curl -s http://localhost:8001/getRouters -H "Authorization: Bearer <token>"
+```
+
+常用路径：`POST /login`、`GET /getInfo`、`GET /getRouters`、`POST /logout`；`/system/user`、`/system/role`、`/system/menu`、`/system/dept`、`/system/dict/type`、`/system/dict/data`（含 `GET /system/dict/data/type/{dictType}`）；`/monitor/operlog`、`/monitor/logininfor`。列表在 `data: {rows, total}`。需要登录的接口走 `Authorization: Bearer`。
+
+冒烟测试（临时 sqlite，不改项目真实数据库配置）：
+
+```bash
+uv run python tests/test_system_auth.py
+```
 
 
 ## Redis
@@ -173,5 +209,13 @@ __all__ = ["router"]
 ```
 
 然后在 `app/router/__init__.py` 里 `api_router.include_router(demo.router)`。
+
+`/test` 提供表 `test`（`id` 自增、`text` VARCHAR(255)）的增删改查样例：
+
+- `GET /test` 列表
+- `POST /test` 新增，body：`{"text": "..."}`
+- `GET /test/{id}` 查询
+- `PUT /test/{id}` 更新
+- `DELETE /test/{id}` 删除
 
 Demo errors: `GET /test/err`（BizException）、`GET /test/http-err`（HTTPException）。
