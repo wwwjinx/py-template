@@ -13,7 +13,7 @@ _FORMATTER = logging.Formatter(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
-_DATED_LOG = re.compile(r"^(.+)\.log\.(\d{4}-\d{2}-\d{2})$")
+_DATED_LOG = re.compile(r"^(.+)\.(\d{4}-\d{2}-\d{2})\.log$")
 _setup_lock = threading.Lock()
 _module_lock = threading.Lock()
 _configured = False
@@ -47,7 +47,7 @@ def _close_handlers(logger: logging.Logger) -> None:
 
 
 class _DatedFileHandler(logging.FileHandler):
-    """当天直接写到 `{stem}.log.YYYY-MM-DD`，跨天自动换文件，并只保留 backupCount 天。"""
+    """当天直接写到 `{stem}.YYYY-MM-DD.log`，跨天自动换文件，并只保留 backupCount 天。"""
 
     def __init__(
         self,
@@ -69,15 +69,15 @@ class _DatedFileHandler(logging.FileHandler):
         return date.today().isoformat()
 
     def _path_for(self, day: str) -> Path:
-        return self._directory / f"{self._stem}.log.{day}"
+        return self._directory / f"{self._stem}.{day}.log"
 
     def _prune(self) -> None:
         if self._backup_count <= 0:
             return
         files = {
             p
-            for p in self._directory.glob(f"{self._stem}.log.*")
-            if _DATED_LOG.fullmatch(p.name) and p.name.startswith(f"{self._stem}.log.")
+            for p in self._directory.glob(f"{self._stem}.*.log")
+            if (m := _DATED_LOG.fullmatch(p.name)) and m.group(1) == self._stem
         }
         # 把即将写入的当天文件也计入保留额度，避免跨天时多留一份
         files.add(Path(self.baseFilename))
@@ -120,8 +120,8 @@ def _add_dated_handler(
 def setup_logging() -> logging.Logger:
     """配置根日志：标准输出 + 按日期的 all / error 文件。目录由 LOG_DIR 决定。
 
-    `all.log.YYYY-MM-DD` 是完整流水，因此会包含 error；
-    `error.log.YYYY-MM-DD` 只筛 ERROR 及以上，方便单独查看。
+    `all.YYYY-MM-DD.log` 是完整流水，因此会包含 error；
+    `error.YYYY-MM-DD.log` 只筛 ERROR 及以上，方便单独查看。
     """
     global _configured
     logger = logging.getLogger("app")
@@ -151,7 +151,7 @@ def get_logger(name: str = "app") -> logging.Logger:
 
 
 def get_module_logger(module: str, key: str) -> logging.Logger:
-    """按模块和业务 id 写独立文件 `logs/{module}.{key}.log.YYYY-MM-DD`。
+    """按模块和业务 id 写独立文件 `logs/{module}.{key}.YYYY-MM-DD.log`。
 
     不进标准输出和 all 日志。只保留最近使用的一批打开文件
     （`LOG_MODULE_CACHE_SIZE`，默认 256），避免 chat_id 很多时占满文件描述符。

@@ -71,7 +71,7 @@ docker-compose.yml     # 可选：Postgres + Redis
 | 请求日志（方法/路径/状态/耗时） | `app/middleware/request_log.py` |
 | 全局异常 → Result | `app/middleware/exception.py` |
 | CORS（`CORS_ENABLED` / `CORS_ORIGINS`；`*` 时不开 credentials） | `app/main.py` + config |
-| 日志文件 | `logs/all.log.YYYY-MM-DD`（完整流水，含错误）、`logs/error.log.YYYY-MM-DD`（仅错误）；模块日志 `logs/{module}.{id}.log.YYYY-MM-DD`（已 gitignore） |
+| 日志文件 | `logs/all.YYYY-MM-DD.log`（完整流水，含错误）、`logs/error.YYYY-MM-DD.log`（仅错误）；模块日志 `logs/{module}.{id}.YYYY-MM-DD.log`（已 gitignore） |
 
 按模块、按业务 id 写独立文件（不进标准输出和 all 日志）。例如模型原始返回：
 
@@ -81,7 +81,7 @@ from app.log import get_module_logger
 get_module_logger("chat", chat_id).info("%s", raw_response)
 ```
 
-当天直接写到 `logs/chat.{chatId}.log.2026-11-11`。目录可用 `LOG_DIR` 配置；模块日志只保留最近 `LOG_MODULE_CACHE_SIZE` 个打开的文件（默认 256）。
+当天直接写到 `logs/chat.{chatId}.2026-11-11.log`。目录可用 `LOG_DIR` 配置；模块日志只保留最近 `LOG_MODULE_CACHE_SIZE` 个打开的文件（默认 256）。
 
 ## PostgreSQL
 
