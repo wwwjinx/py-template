@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.deps import get_current_user
-from app.router import health, login, monitor, system, test
+from app.router import common, health, login, monitor, system, test
 from app.router.root import router as root_router
 
 # 未登录可访问。新增公开接口必须登记到这里，其余一律走 api_router。
@@ -17,5 +17,6 @@ api_router.include_router(login.router)
 api_router.include_router(system.router)
 api_router.include_router(monitor.router)
 api_router.include_router(test.router)
+api_router.include_router(common.router)
 
 __all__ = ["api_router", "public_router"]

@@ -6,6 +6,7 @@ from app import config
 from app.log import get_logger, setup_logging
 from app.middleware import RequestLogMiddleware, register_exception_handlers
 from app.router import api_router, public_router
+from app.storage import mount_storage
 from app.utils.net import get_ip_address
 
 setup_logging()
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(application)
     application.include_router(public_router)
     application.include_router(api_router)
+    mount_storage(application)
     return application
 
 

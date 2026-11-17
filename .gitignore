@@ -20,3 +20,6 @@ uv.lock.bak
 # local secret overrides (never commit)
 env/.dev.env.local
 env/.prod.env.local
+
+# local file storage
+uploads/

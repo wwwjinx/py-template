@@ -21,16 +21,21 @@ def _temp_db() -> Iterator[None]:
 
     previous_url = cfg.DATABASE_URL
     previous_secret = cfg.JWT_SECRET
+    previous_storage = cfg.STORAGE_LOCAL_DIR
     previous_engine = dbmod._engine
     previous_factory = dbmod._session_factory
 
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
         db_path = Path(tmp.name)
+    upload_dir = Path(tempfile.mkdtemp())
     dbmod._engine = None
     dbmod._session_factory = None
     cfg.DATABASE_URL = f"sqlite+aiosqlite:///{db_path.as_posix()}"
     cfg.JWT_SECRET = "test-jwt-secret-do-not-use-32b+"
     cfg.JWT_EXPIRE_MINUTES = 60
+    cfg.STORAGE_BACKEND = "local"
+    cfg.STORAGE_LOCAL_DIR = str(upload_dir)
+    cfg.STORAGE_PUBLIC_BASE_URL = ""
     try:
         yield
     finally:
@@ -39,9 +44,17 @@ def _temp_db() -> Iterator[None]:
         dbmod._session_factory = previous_factory
         cfg.DATABASE_URL = previous_url
         cfg.JWT_SECRET = previous_secret
+        cfg.STORAGE_LOCAL_DIR = previous_storage
         if engine is not None:
             asyncio.run(engine.dispose())
         db_path.unlink(missing_ok=True)
+        for child in upload_dir.rglob("*"):
+            if child.is_file():
+                child.unlink(missing_ok=True)
+        for child in sorted(upload_dir.rglob("*"), reverse=True):
+            if child.is_dir():
+                child.rmdir()
+        upload_dir.rmdir()
 
 
 def _assert(cond: bool, msg: str) -> None:
@@ -101,6 +114,37 @@ def main() -> None:
             _assert(isinstance(token, str) and token, f"missing token: {body}")
 
             headers = {"Authorization": f"Bearer {token}"}
+
+            no_upload = client.post("/common/upload", files={"file": ("hello.txt", b"hello", "text/plain")})
+            _assert(no_upload.status_code == 200, f"upload http={no_upload.status_code}")
+            _assert(
+                no_upload.json()["code"] == 401,
+                f"upload without token should be 401, got {no_upload.json()}",
+            )
+
+            uploaded = client.post(
+                "/common/upload",
+                headers=headers,
+                files={"file": ("hello.txt", b"hello", "text/plain")},
+            ).json()
+            _assert(uploaded["code"] == 200, f"upload failed: {uploaded}")
+            _assert(uploaded["data"]["originalFilename"] == "hello.txt", f"name: {uploaded}")
+            _assert(uploaded["data"]["size"] == 5, f"size: {uploaded}")
+            file_key = uploaded["data"]["fileName"]
+            file_url = uploaded["data"]["url"]
+            _assert(file_url.startswith("/uploads/"), f"url: {file_url}")
+            static = client.get(file_url)
+            _assert(static.status_code == 200 and static.content == b"hello", f"static {file_url}: {static.status_code}")
+            downloaded = client.get("/common/download", headers=headers, params={"fileName": file_key})
+            _assert(downloaded.status_code == 200 and downloaded.content == b"hello", f"download: {downloaded.status_code}")
+
+            rejected = client.post(
+                "/common/upload",
+                headers=headers,
+                files={"file": ("bad.exe", b"MZ", "application/octet-stream")},
+            ).json()
+            _assert(rejected["code"] == 400, f"exe should be rejected: {rejected}")
+
             info = client.get("/getInfo", headers=headers).json()
             _assert(info["code"] == 200, f"getInfo failed: {info}")
             _assert(info["data"]["user"]["userName"] == "admin", f"userName: {info['data']}")

@@ -50,3 +50,20 @@ try:
     JWT_EXPIRE_MINUTES = max(1, int(os.getenv("JWT_EXPIRE_MINUTES", "1440")))
 except ValueError:
     JWT_EXPIRE_MINUTES = 1440
+
+# 文件存储：默认本地磁盘。后续接 OSS/S3 时改 STORAGE_BACKEND 并加对应实现。
+STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "local").strip().lower() or "local"
+_storage_dir = os.getenv("STORAGE_LOCAL_DIR", "uploads").strip() or "uploads"
+_storage_path = Path(_storage_dir)
+STORAGE_LOCAL_DIR = str(_storage_path if _storage_path.is_absolute() else PROJECT_ROOT / _storage_path)
+STORAGE_PUBLIC_BASE_URL = os.getenv("STORAGE_PUBLIC_BASE_URL", "").strip().rstrip("/")
+STORAGE_URL_PREFIX = os.getenv("STORAGE_URL_PREFIX", "/uploads").strip() or "/uploads"
+try:
+    STORAGE_MAX_SIZE_MB = max(1, int(os.getenv("STORAGE_MAX_SIZE_MB", "10")))
+except ValueError:
+    STORAGE_MAX_SIZE_MB = 10
+_exts = os.getenv(
+    "STORAGE_ALLOWED_EXTS",
+    "jpg,jpeg,png,gif,webp,bmp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,zip",
+)
+STORAGE_ALLOWED_EXTS = {e.strip().lower().lstrip(".") for e in _exts.split(",") if e.strip()}
