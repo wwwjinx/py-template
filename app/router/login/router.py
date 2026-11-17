@@ -5,10 +5,11 @@ from app.deps import CurrentUserDep
 from app.router.login import service
 from app.schemas.login import LoginBody
 
+public_router = APIRouter(tags=["登录"])
 router = APIRouter(tags=["登录"])
 
 
-@router.post("/login")
+@public_router.post("/login")
 async def login(payload: LoginBody, db: SessionDep, request: Request):
     return await service.login(db, payload.username, payload.password, request)
 

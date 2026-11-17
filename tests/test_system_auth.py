@@ -81,6 +81,18 @@ def main() -> None:
                 f"getRouters without token should be 401, got {no_routers.json()}",
             )
 
+            root = client.get("/")
+            _assert(root.status_code == 200 and root.json()["code"] == 200, f"public /: {root.json()}")
+            health = client.get("/health")
+            _assert(health.status_code == 200, f"public /health http={health.status_code}")
+
+            no_test = client.get("/test")
+            _assert(no_test.status_code == 200, f"/test http={no_test.status_code}")
+            _assert(
+                no_test.json()["code"] == 401,
+                f"/test without token should be 401, got {no_test.json()}",
+            )
+
             ok = client.post("/login", json={"username": "admin", "password": "admin123"})
             body = ok.json()
             _assert(body["code"] == 200, f"login should succeed, got {body}")
