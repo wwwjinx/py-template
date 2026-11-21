@@ -51,11 +51,7 @@ async def save_upload(storage: FileStorage, file: UploadFile) -> UploadedFileOut
     )
 
 
-async def upload(storage: FileStorage, file: UploadFile) -> Result[UploadedFileOut]:
-    return Result.ok(data=await save_upload(storage, file), msg="上传成功")
-
-
-async def upload_many(storage: FileStorage, files: list[UploadFile]) -> Result[list[UploadedFileOut]]:
+async def upload(storage: FileStorage, files: list[UploadFile]) -> Result[list[UploadedFileOut]]:
     if not files:
         raise BizException(message="请选择文件", code=ResponseCode.PARAM_ERROR)
     items = [await save_upload(storage, item) for item in files]

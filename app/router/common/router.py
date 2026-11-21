@@ -8,18 +8,12 @@ from app.storage import FileStorageDep
 
 router = APIRouter(prefix="/common", tags=["文件"])
 
-UploadFileDep = Annotated[UploadFile, File()]
 UploadFilesDep = Annotated[list[UploadFile], File()]
 
 
 @router.post("/upload")
-async def upload(storage: FileStorageDep, file: UploadFileDep):
-    return await service.upload(storage, file)
-
-
-@router.post("/uploads")
-async def upload_many(storage: FileStorageDep, files: UploadFilesDep):
-    return await service.upload_many(storage, files)
+async def upload(storage: FileStorageDep, files: UploadFilesDep):
+    return await service.upload(storage, files)
 
 
 @router.get("/download")

@@ -115,7 +115,7 @@ def main() -> None:
 
             headers = {"Authorization": f"Bearer {token}"}
 
-            no_upload = client.post("/common/upload", files={"file": ("hello.txt", b"hello", "text/plain")})
+            no_upload = client.post("/common/upload", files={"files": ("hello.txt", b"hello", "text/plain")})
             _assert(no_upload.status_code == 200, f"upload http={no_upload.status_code}")
             _assert(
                 no_upload.json()["code"] == 401,
@@ -125,13 +125,15 @@ def main() -> None:
             uploaded = client.post(
                 "/common/upload",
                 headers=headers,
-                files={"file": ("hello.txt", b"hello", "text/plain")},
+                files={"files": ("hello.txt", b"hello", "text/plain")},
             ).json()
             _assert(uploaded["code"] == 200, f"upload failed: {uploaded}")
-            _assert(uploaded["data"]["originalFilename"] == "hello.txt", f"name: {uploaded}")
-            _assert(uploaded["data"]["size"] == 5, f"size: {uploaded}")
-            file_key = uploaded["data"]["fileName"]
-            file_url = uploaded["data"]["url"]
+            _assert(len(uploaded["data"]) == 1, f"single upload should return one item: {uploaded}")
+            item = uploaded["data"][0]
+            _assert(item["originalFilename"] == "hello.txt", f"name: {uploaded}")
+            _assert(item["size"] == 5, f"size: {uploaded}")
+            file_key = item["fileName"]
+            file_url = item["url"]
             _assert(file_url.startswith("/uploads/"), f"url: {file_url}")
             static = client.get(file_url)
             _assert(static.status_code == 200 and static.content == b"hello", f"static {file_url}: {static.status_code}")
@@ -141,9 +143,23 @@ def main() -> None:
             rejected = client.post(
                 "/common/upload",
                 headers=headers,
-                files={"file": ("bad.exe", b"MZ", "application/octet-stream")},
+                files={"files": ("bad.exe", b"MZ", "application/octet-stream")},
             ).json()
             _assert(rejected["code"] == 400, f"exe should be rejected: {rejected}")
+
+            many = client.post(
+                "/common/upload",
+                headers=headers,
+                files=[
+                    ("files", ("hello.txt", b"hello", "text/plain")),
+                    ("files", ("world.txt", b"world", "text/plain")),
+                ],
+            ).json()
+            _assert(many["code"] == 200, f"multi upload failed: {many}")
+            _assert(len(many["data"]) == 2, f"multi upload count: {many}")
+            names = [row["originalFilename"] for row in many["data"]]
+            _assert(names == ["hello.txt", "world.txt"], f"multi names: {many}")
+            _assert(many["data"][0]["size"] == 5 and many["data"][1]["size"] == 5, f"multi size: {many}")
 
             info = client.get("/getInfo", headers=headers).json()
             _assert(info["code"] == 200, f"getInfo failed: {info}")

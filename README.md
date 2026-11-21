@@ -143,7 +143,7 @@ curl -s http://localhost:8001/getRouters -H "Authorization: Bearer <token>"
 
 常用路径：`POST /login`、`GET /getInfo`、`GET /getRouters`、`POST /logout`；`/system/user`、`/system/role`、`/system/menu`、`/system/dept`、`/system/dict/type`、`/system/dict/data`（含 `GET /system/dict/data/type/{dictType}`）；`/monitor/operlog`、`/monitor/logininfor`。列表在 `data: {rows, total}`。需要登录的接口走 `Authorization: Bearer`。
 
-文件上传走统一存储接口 `app/storage`，默认本地目录 `uploads/`（已 gitignore），后续接云厂商 OSS 时改 `STORAGE_BACKEND` 并补对应实现即可。上传需要登录：`POST /common/upload`、`POST /common/uploads`、`GET /common/download?fileName=`；文件本身通过 `GET /uploads/...` 访问。
+文件上传走统一存储接口 `app/storage`，默认本地目录 `uploads/`（已 gitignore），后续接云厂商 OSS 时改 `STORAGE_BACKEND` 并补对应实现即可。上传需要登录：`POST /common/upload`（表单字段 `files`，一次可传一个或多个文件，`data` 为数组）、`GET /common/download?fileName=`；文件本身通过 `GET /uploads/...` 访问。
 
 冒烟测试（临时 sqlite，不改项目真实数据库配置）：
 
