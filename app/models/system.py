@@ -206,3 +206,19 @@ class SysLogininfor(SQLModel, table=True):
     status: str | None = Field(default="0", sa_column=Column(String(1), default="0"))
     msg: str | None = Field(default="", sa_column=Column(String(255), default=""))
     login_time: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))
+
+
+class SysFile(SQLModel, table=True):
+    __tablename__ = "sys_file"
+
+    file_id: int | None = Field(default=None, sa_column=_bigint_pk())
+    original_filename: str | None = Field(default="", sa_column=Column(String(255), default=""))
+    file_name: str | None = Field(default="", sa_column=Column(String(500), default=""))
+    new_file_name: str | None = Field(default="", sa_column=Column(String(255), default=""))
+    url: str | None = Field(default="", sa_column=Column(String(1000), default=""))
+    file_suffix: str | None = Field(default="", sa_column=Column(String(32), default=""))
+    content_type: str | None = Field(default="", sa_column=Column(String(128), default=""))
+    size: int | None = Field(default=0, sa_column=Column(BigInteger, default=0))
+    del_flag: str | None = Field(default="0", sa_column=Column(String(1), default="0"))
+    create_by: str | None = Field(default="", sa_column=Column(String(64), default=""))
+    create_time: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))

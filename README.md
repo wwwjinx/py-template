@@ -119,7 +119,13 @@ async def list_items(db: SessionDep):
 
 已迁入若依常用的登录鉴权、用户/角色/菜单/部门、字典、操作/登录日志，实现按本模板的 FastAPI + SQLModel 异步 Session 习惯，接口路径对齐若依前端。
 
-依赖：`uv sync`（含 `pyjwt`、`bcrypt`）。配置 `DATABASE_URL` 后手动建表并写入超管（启动不会自动执行）：
+依赖：`uv sync`（含 `pyjwt`、`bcrypt`）。配置 `DATABASE_URL` 后手动建表并写入超管（启动不会自动执行）。空的 Postgres 库可直接执行 `sql/init.sql`（建表 + 种子数据）：
+
+```bash
+psql -h 127.0.0.1 -U postgres -d your_db -f sql/init.sql
+```
+
+也可以用 Python（按模型 `create_all`，已有 `admin` 则跳过）：
 
 ```bash
 uv run python -m app.seed
@@ -143,7 +149,7 @@ curl -s http://localhost:8001/getRouters -H "Authorization: Bearer <token>"
 
 常用路径：`POST /login`、`GET /getInfo`、`GET /getRouters`、`POST /logout`；`/system/user`、`/system/role`、`/system/menu`、`/system/dept`、`/system/dict/type`、`/system/dict/data`（含 `GET /system/dict/data/type/{dictType}`）；`/monitor/operlog`、`/monitor/logininfor`。列表在 `data: {rows, total}`。需要登录的接口走 `Authorization: Bearer`。
 
-文件上传走统一存储接口 `app/storage`，默认本地目录 `uploads/`（已 gitignore），后续接云厂商 OSS 时改 `STORAGE_BACKEND` 并补对应实现即可。上传需要登录：`POST /common/upload`（表单字段 `files`，一次可传一个或多个文件，`data` 为数组）、`GET /common/download?fileName=`；文件本身通过 `GET /uploads/...` 访问。
+文件上传走统一存储接口 `app/storage`，默认本地目录 `uploads/`（已 gitignore），后续接云厂商 OSS 时改 `STORAGE_BACKEND` 并补对应实现即可。上传需要登录：`POST /common/upload`（表单字段 `files`，一次可传一个或多个文件，写入 `sys_file`，`data` 为数组且含 `fileId`）、`GET /common/download?fileId=`（兼容 `fileName`）；文件本身通过 `GET /uploads/...` 访问。已有数据库需执行 `init_db`，或参考 `sql/init.sql` 中的 `sys_file` 建表语句。
 
 冒烟测试（临时 sqlite，不改项目真实数据库配置）：
 

@@ -132,13 +132,19 @@ def main() -> None:
             item = uploaded["data"][0]
             _assert(item["originalFilename"] == "hello.txt", f"name: {uploaded}")
             _assert(item["size"] == 5, f"size: {uploaded}")
+            file_id = item["fileId"]
+            _assert(isinstance(file_id, int) and file_id > 0, f"fileId: {uploaded}")
             file_key = item["fileName"]
             file_url = item["url"]
             _assert(file_url.startswith("/uploads/"), f"url: {file_url}")
             static = client.get(file_url)
             _assert(static.status_code == 200 and static.content == b"hello", f"static {file_url}: {static.status_code}")
-            downloaded = client.get("/common/download", headers=headers, params={"fileName": file_key})
-            _assert(downloaded.status_code == 200 and downloaded.content == b"hello", f"download: {downloaded.status_code}")
+            downloaded = client.get("/common/download", headers=headers, params={"fileId": file_id})
+            _assert(downloaded.status_code == 200 and downloaded.content == b"hello", f"download by fileId: {downloaded.status_code}")
+            downloaded_by_name = client.get("/common/download", headers=headers, params={"fileName": file_key})
+            _assert(downloaded_by_name.status_code == 200 and downloaded_by_name.content == b"hello", f"download by fileName: {downloaded_by_name.status_code}")
+            missing = client.get("/common/download", headers=headers, params={"fileId": 999999}).json()
+            _assert(missing["code"] == 404, f"missing fileId should be 404, got {missing}")
 
             rejected = client.post(
                 "/common/upload",
@@ -160,6 +166,9 @@ def main() -> None:
             names = [row["originalFilename"] for row in many["data"]]
             _assert(names == ["hello.txt", "world.txt"], f"multi names: {many}")
             _assert(many["data"][0]["size"] == 5 and many["data"][1]["size"] == 5, f"multi size: {many}")
+            ids = [row["fileId"] for row in many["data"]]
+            _assert(all(isinstance(i, int) and i > 0 for i in ids), f"multi fileId: {many}")
+            _assert(len(set(ids)) == 2, f"multi fileId should be unique: {many}")
 
             info = client.get("/getInfo", headers=headers).json()
             _assert(info["code"] == 200, f"getInfo failed: {info}")
